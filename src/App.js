@@ -1,4 +1,22 @@
 import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+
+// Firebase 설정
+const firebaseConfig = {
+  apiKey: "AIzaSyAJOhVQSYf-4GIyGnFiRpChjb0FuzPdjBk",
+  authDomain: "njob-income-tracker.firebaseapp.com",
+  projectId: "njob-income-tracker",
+  storageBucket: "njob-income-tracker.firebasestorage.app",
+  messagingSenderId: "176646550330",
+  appId: "1:176646550330:web:33ca6599dd6c3069ee5603"
+};
+
+// Firebase 초기화
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 export default function SideIncomeTracker() {
   const [activeTab, setActiveTab] = useState('graph');
@@ -14,66 +32,28 @@ export default function SideIncomeTracker() {
   const [tempMonth, setTempMonth] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [firebaseInitialized, setFirebaseInitialized] = useState(false);
 
-  // Firebase 초기화
+  // 로그인 상태 감지
   useEffect(() => {
-    const initFirebase = async () => {
-      try {
-        // Firebase 모듈 동적 import
-        const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-        const { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
-        const { getFirestore, doc, setDoc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-
-        const firebaseConfig = {
-          apiKey: "AIzaSyAJOhVQSYf-4GIyGnFiRpChjb0FuzPdjBk",
-          authDomain: "njob-income-tracker.firebaseapp.com",
-          projectId: "njob-income-tracker",
-          storageBucket: "njob-income-tracker.firebasestorage.app",
-          messagingSenderId: "176646550330",
-          appId: "1:176646550330:web:33ca6599dd6c3069ee5603"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        window.firebaseAuth = getAuth(app);
-        window.firebaseDb = getFirestore(app);
-        window.GoogleAuthProvider = GoogleAuthProvider;
-        window.signInWithPopup = signInWithPopup;
-        window.signOut = signOut;
-        window.doc = doc;
-        window.setDoc = setDoc;
-        window.getDoc = getDoc;
-
-        setFirebaseInitialized(true);
-
-        // 로그인 상태 감지
-        onAuthStateChanged(window.firebaseAuth, async (firebaseUser) => {
-          if (firebaseUser) {
-            const nickname = generateNickname(firebaseUser.uid);
-            setUser({
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              photoURL: firebaseUser.photoURL,
-              nickname: nickname
-            });
-            
-            // Firestore에서 데이터 불러오기
-            await loadDataFromFirestore(firebaseUser.uid);
-          } else {
-            setUser(null);
-            // 로그아웃 시 localStorage에서 데이터 불러오기
-            loadDataFromLocalStorage();
-          }
-          setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const nickname = generateNickname(firebaseUser.uid);
+        setUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          photoURL: firebaseUser.photoURL,
+          nickname: nickname
         });
-      } catch (error) {
-        console.error('Firebase 초기화 실패:', error);
-        setLoading(false);
+        
+        await loadDataFromFirestore(firebaseUser.uid);
+      } else {
+        setUser(null);
         loadDataFromLocalStorage();
       }
-    };
+      setLoading(false);
+    });
 
-    initFirebase();
+    return () => unsubscribe();
   }, []);
 
   // localStorage에서 데이터 불러오기
@@ -91,15 +71,14 @@ export default function SideIncomeTracker() {
   // Firestore에서 데이터 불러오기
   const loadDataFromFirestore = async (uid) => {
     try {
-      const docRef = window.doc(window.firebaseDb, 'users', uid);
-      const docSnap = await window.getDoc(docRef);
+      const docRef = doc(db, 'users', uid);
+      const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
         const data = docSnap.data();
         setIncomes(data.incomes || []);
         localStorage.setItem('njob-incomes', JSON.stringify(data.incomes || []));
       } else {
-        // Firestore에 데이터 없으면 localStorage 데이터 마이그레이션
         const localData = localStorage.getItem('njob-incomes');
         if (localData) {
           const parsedData = JSON.parse(localData);
@@ -116,8 +95,8 @@ export default function SideIncomeTracker() {
   // Firestore에 데이터 저장
   const saveDataToFirestore = async (uid, data) => {
     try {
-      const docRef = window.doc(window.firebaseDb, 'users', uid);
-      await window.setDoc(docRef, {
+      const docRef = doc(db, 'users', uid);
+      await setDoc(docRef, {
         incomes: data,
         updatedAt: new Date().toISOString()
       });
@@ -130,14 +109,12 @@ export default function SideIncomeTracker() {
   useEffect(() => {
     if (loading) return;
     
-    // localStorage에 항상 저장
     localStorage.setItem('njob-incomes', JSON.stringify(incomes));
     
-    // 로그인 상태면 Firestore에도 저장
-    if (user && firebaseInitialized) {
+    if (user) {
       saveDataToFirestore(user.uid, incomes);
     }
-  }, [incomes, user, loading, firebaseInitialized]);
+  }, [incomes, user, loading]);
 
   // 랜덤 닉네임 생성 (UID 뒷 4자리로 유니크 보장)
   const generateNickname = (uid) => {
@@ -147,21 +124,16 @@ export default function SideIncomeTracker() {
     const hash = uid.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const adj = adjectives[hash % adjectives.length];
     const noun = nouns[(hash * 7) % nouns.length];
-    const uniqueId = uid.slice(-4); // UID 뒷 4자리
+    const uniqueId = uid.slice(-4);
     
     return `${adj}${noun}_${uniqueId}`;
   };
 
   // 구글 로그인
   const handleGoogleLogin = async () => {
-    if (!firebaseInitialized) {
-      alert('Firebase 초기화 중입니다. 잠시 후 다시 시도해주세요.');
-      return;
-    }
-
     try {
-      const provider = new window.GoogleAuthProvider();
-      await window.signInWithPopup(window.firebaseAuth, provider);
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
     } catch (error) {
       console.error('로그인 실패:', error);
       alert('로그인에 실패했습니다. 다시 시도해주세요.');
@@ -171,7 +143,7 @@ export default function SideIncomeTracker() {
   // 로그아웃
   const handleLogout = async () => {
     try {
-      await window.signOut(window.firebaseAuth);
+      await signOut(auth);
       alert('로그아웃되었습니다.');
     } catch (error) {
       console.error('로그아웃 실패:', error);
@@ -1080,7 +1052,6 @@ export default function SideIncomeTracker() {
               textAlign: 'center'
             }}>
               {user ? (
-                // 로그인 상태
                 <>
                   <div style={{
                     width: '80px',
@@ -1161,7 +1132,6 @@ export default function SideIncomeTracker() {
                   </div>
                 </>
               ) : (
-                // 비로그인 상태
                 <>
                   <div style={{
                     width: '80px',
