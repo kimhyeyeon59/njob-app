@@ -176,8 +176,11 @@ export default function SideIncomeTracker() {
   // 로그아웃
   const handleLogout = async () => {
     try {
-      await signOut(auth);
       showToast('로그아웃되었습니다.', 'success');
+      // 토스트가 보이도록 약간 지연 후 로그아웃
+      setTimeout(async () => {
+        await signOut(auth);
+      }, 500);
     } catch (error) {
       console.error('로그아웃 실패:', error);
       showToast('로그아웃에 실패했습니다.', 'error');
@@ -431,31 +434,31 @@ export default function SideIncomeTracker() {
         input, select {
           box-sizing: border-box;
         }
-        @keyframes slideInUp {
+        @keyframes toastIn {
           from {
-            transform: translateY(100%);
             opacity: 0;
+            transform: scale(0.9);
           }
           to {
-            transform: translateY(0);
             opacity: 1;
+            transform: scale(1);
           }
         }
-        @keyframes slideOutDown {
+        @keyframes toastOut {
           from {
-            transform: translateY(0);
             opacity: 1;
+            transform: scale(1);
           }
           to {
-            transform: translateY(100%);
             opacity: 0;
+            transform: scale(0.9);
           }
         }
         .toast-enter {
-          animation: slideInUp 0.3s ease-out;
+          animation: toastIn 0.3s ease-out forwards;
         }
         .toast-exit {
-          animation: slideOutDown 0.3s ease-in;
+          animation: toastOut 0.3s ease-in forwards;
         }
       `}</style>
 
@@ -1358,17 +1361,19 @@ export default function SideIncomeTracker() {
           className="toast-enter"
           style={{
             position: 'fixed',
-            bottom: '100px',
-            left: '50%',
-            transform: 'translateX(-50%)',
+            bottom: '110px',
+            left: '0',
+            right: '0',
+            margin: '0 auto',
+            width: 'fit-content',
             backgroundColor: toast.type === 'success' ? '#10b981' : '#ef4444',
             color: 'white',
             padding: '14px 20px',
             borderRadius: '12px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            zIndex: 1000,
+            zIndex: 9999,
             minWidth: '280px',
-            maxWidth: '90%',
+            maxWidth: 'calc(100% - 40px)',
             textAlign: 'center',
             fontSize: '15px',
             fontWeight: '600',
