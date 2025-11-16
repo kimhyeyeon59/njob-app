@@ -34,6 +34,7 @@ export default function SideIncomeTracker() {
   const [loading, setLoading] = useState(true);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [minLoadingTime, setMinLoadingTime] = useState(true);
 
   // 로그인 상태 감지
   useEffect(() => {
@@ -56,6 +57,15 @@ export default function SideIncomeTracker() {
     });
 
     return () => unsubscribe();
+  }, []);
+
+  // 스플래시 화면 최소 2초 보장
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinLoadingTime(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // 토스트 알림 표시
@@ -156,7 +166,7 @@ export default function SideIncomeTracker() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      showToast('로그인되었습니다! 🎉', 'success');
+      showToast('로그인되었습니다.', 'success');
     } catch (error) {
       console.error('로그인 실패:', error);
       showToast('로그인에 실패했습니다. 다시 시도해주세요.', 'error');
@@ -352,7 +362,7 @@ export default function SideIncomeTracker() {
     return `${year}년 ${parseInt(month)}월`;
   };
 
-  if (loading) {
+  if (loading || minLoadingTime) {
     return (
       <div style={{
         fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif",
@@ -1353,23 +1363,28 @@ export default function SideIncomeTracker() {
             transform: 'translateX(-50%)',
             backgroundColor: toast.type === 'success' ? '#10b981' : '#ef4444',
             color: 'white',
-            padding: '16px 24px',
+            padding: '14px 20px',
             borderRadius: '12px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
             zIndex: 1000,
+            minWidth: '280px',
             maxWidth: '90%',
             textAlign: 'center',
             fontSize: '15px',
             fontWeight: '600',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            justifyContent: 'center',
+            gap: '8px',
+            whiteSpace: 'nowrap'
           }}
         >
-          <span style={{ fontSize: '20px' }}>
+          <span style={{ fontSize: '18px', flexShrink: 0 }}>
             {toast.type === 'success' ? '✓' : '✕'}
           </span>
-          {toast.message}
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {toast.message}
+          </span>
         </div>
       )}
 
