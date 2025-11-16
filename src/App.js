@@ -405,7 +405,7 @@ export default function SideIncomeTracker() {
         `}</style>
         <div style={{ textAlign: 'center' }}>
           <div className="splash-logo" style={{ fontSize: '80px', marginBottom: '24px' }}>
-            📑
+            📑 {/* 💰 대신 📑로 변경 */}
           </div>
           <h1 className="splash-text" style={{ 
             fontSize: '28px', 
@@ -479,7 +479,7 @@ export default function SideIncomeTracker() {
         textAlign: 'center'
       }}>
         <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1f2937', margin: 0 }}>
-          N잡 수입 관리
+          N잡 수입 관리 {/* 💰 이모지 제거 */}
         </h1>
       </header>
 
@@ -626,7 +626,7 @@ export default function SideIncomeTracker() {
                 </label>
                 <input
                   type="text"
-                  placeholder="예: 회사, 티스토리리"
+                  placeholder="예: 블로그 애드센스"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   style={{
@@ -786,7 +786,7 @@ export default function SideIncomeTracker() {
 
               <div style={{ marginBottom: '24px' }}>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
-                  월 업무 시간
+                  월 투입 시간
                 </label>
                 <input
                   type="number"
@@ -1043,7 +1043,7 @@ export default function SideIncomeTracker() {
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
               }}>
                 <div style={{ fontSize: '48px', marginBottom: '16px' }}>
-                  📑
+                  📑 {/* 💰 대신 📑로 변경 */}
                 </div>
                 <p style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '8px' }}>
                   아직 등록된 수입원이 없어요!
@@ -1289,8 +1289,4 @@ function SummaryCard({ title, value, color, emoji }) {
       </p>
     </div>
   );
-}
-
-function SummaryCardStyles() {
-  return null; // 실제 컴포넌트는 아니므로 null 반환
 }
