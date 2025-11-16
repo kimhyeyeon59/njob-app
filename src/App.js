@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
 // Firebase 설정
@@ -58,6 +58,24 @@ export default function SideIncomeTracker() {
 
     return () => unsubscribe();
   }, []);
+
+  // 리다이렉트 로그인 처리
+useEffect(() => {
+  const checkRedirectResult = async () => {
+    try {
+      const result = await getRedirectResult(auth);
+      if (result) {
+        showToast('로그인되었습니다.', 'success');
+      }
+    } catch (error) {
+      console.error('리다이렉트 로그인 실패:', error);
+      if (error.code !== 'auth/popup-closed-by-user') {
+        showToast('로그인에 실패했습니다.', 'error');
+      }
+    }
+  };
+  checkRedirectResult();
+}, []);
 
   // 스플래시 화면 최소 2초 보장
   useEffect(() => {
@@ -175,8 +193,18 @@ export default function SideIncomeTracker() {
   const handleGoogleLogin = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      showToast('로그인되었습니다.', 'success');
+      
+      // 모바일 환경 감지
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // 모바일에서는 redirect 방식 사용
+        await signInWithRedirect(auth, provider);
+      } else {
+        // 데스크톱에서는 popup 방식 사용
+        await signInWithPopup(auth, provider);
+        showToast('로그인되었습니다.', 'success');
+      }
     } catch (error) {
       console.error('로그인 실패:', error);
       showToast('로그인에 실패했습니다. 다시 시도해주세요.', 'error');
@@ -384,7 +412,9 @@ export default function SideIncomeTracker() {
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#60A5FA',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        paddingTop: 'env(safe-area-inset-top)',
+      paddingBottom: 'env(safe-area-inset-bottom)'
       }}>
         <style>{`
           @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -434,7 +464,9 @@ export default function SideIncomeTracker() {
       height: '100vh',
       display: 'flex',
       flexDirection: 'column',
-      backgroundColor: '#f8fafc'
+      backgroundColor: '#f8fafc',
+      paddingTop: 'env(safe-area-inset-top)',
+      paddingBottom: 'env(safe-area-inset-bottom)'
     }}>
       <style>{`
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -478,12 +510,12 @@ export default function SideIncomeTracker() {
         borderBottom: '1px solid #e5e7eb',
         textAlign: 'center'
       }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1f2937', margin: 0 }}>
+        <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#1f2937', margin: 0 }}>
           N잡 수입 관리
         </h1>
       </header>
 
-      <main style={{ flex: 1, overflow: 'auto', paddingBottom: '80px' }}>
+      <main style={{ flex: 1, overflow: 'auto', paddingBottom: '90px' }}>
         {showMonthPicker && (
           <div style={{
             position: 'fixed',
@@ -501,6 +533,7 @@ export default function SideIncomeTracker() {
               width: '100%',
               borderRadius: '20px 20px 0 0',
               padding: '24px',
+              paddingBottom: `calc(24px + env(safe-area-inset-bottom))`,
               maxHeight: '400px'
             }} onClick={(e) => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -1371,7 +1404,7 @@ export default function SideIncomeTracker() {
           className="toast-enter"
           style={{
             position: 'fixed',
-            bottom: '110px',
+            bottom: `calc(110px + env(safe-area-inset-bottom))`,
             left: '0',
             right: '0',
             margin: '0 auto',
@@ -1413,6 +1446,7 @@ export default function SideIncomeTracker() {
         display: 'flex',
         justifyContent: 'space-around',
         padding: '8px 0 12px 0',
+        paddingBottom: `calc(12px + env(safe-area-inset-bottom))`,
         boxShadow: '0 -2px 10px rgba(0,0,0,0.05)'
       }}>
         {[

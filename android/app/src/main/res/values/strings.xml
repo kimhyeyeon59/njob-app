@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Njob-income-tracker</string>
+    <string name="title_activity_main">Njob-income-tracker</string>
+    <string name="package_name">app.njobtracker.sideincome</string>
+    <string name="custom_url_scheme">app.njobtracker.sideincome</string>
+</resources>
