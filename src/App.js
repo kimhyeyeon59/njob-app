@@ -391,6 +391,12 @@ export default function SideIncomeTracker() {
     }}>
       <style>{`
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        * {
+          box-sizing: border-box;
+        }
+        input, select {
+          box-sizing: border-box;
+        }
       `}</style>
 
       <header style={{
@@ -530,11 +536,11 @@ export default function SideIncomeTracker() {
         )}
 
         {activeTab === 'add' && (
-          <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+          <div style={{ padding: '16px', maxWidth: '600px', margin: '0 auto' }}>
             <div style={{
               backgroundColor: 'white',
               borderRadius: '16px',
-              padding: '24px',
+              padding: '20px',
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}>
               <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px', color: '#1f2937' }}>
@@ -556,7 +562,8 @@ export default function SideIncomeTracker() {
                     border: '1px solid #d1d5db',
                     borderRadius: '12px',
                     fontSize: '15px',
-                    outline: 'none'
+                    outline: 'none',
+                    boxSizing: 'border-box'
                   }}
                   onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
                   onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
@@ -577,7 +584,8 @@ export default function SideIncomeTracker() {
                     borderRadius: '12px',
                     fontSize: '15px',
                     outline: 'none',
-                    backgroundColor: 'white'
+                    backgroundColor: 'white',
+                    boxSizing: 'border-box'
                   }}
                 >
                   <option value="본업">본업</option>
@@ -600,7 +608,8 @@ export default function SideIncomeTracker() {
                     border: '1px solid #d1d5db',
                     borderRadius: '12px',
                     fontSize: '15px',
-                    outline: 'none'
+                    outline: 'none',
+                    boxSizing: 'border-box'
                   }}
                   onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
                   onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
@@ -623,7 +632,8 @@ export default function SideIncomeTracker() {
                     border: '1px solid #d1d5db',
                     borderRadius: '12px',
                     fontSize: '15px',
-                    outline: 'none'
+                    outline: 'none',
+                    boxSizing: 'border-box'
                   }}
                   onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
                   onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
@@ -645,7 +655,8 @@ export default function SideIncomeTracker() {
                     border: '1px solid #d1d5db',
                     borderRadius: '12px',
                     fontSize: '15px',
-                    outline: 'none'
+                    outline: 'none',
+                    boxSizing: 'border-box'
                   }}
                   onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
                   onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
