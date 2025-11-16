@@ -32,6 +32,8 @@ export default function SideIncomeTracker() {
   const [tempMonth, setTempMonth] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   // 로그인 상태 감지
   useEffect(() => {
@@ -55,6 +57,26 @@ export default function SideIncomeTracker() {
 
     return () => unsubscribe();
   }, []);
+
+  // 토스트 알림 표시
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+    }, 3000);
+  };
+
+  // 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showTypeDropdown && !event.target.closest('[data-dropdown]')) {
+        setShowTypeDropdown(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showTypeDropdown]);
 
   // localStorage에서 데이터 불러오기
   const loadDataFromLocalStorage = () => {
@@ -134,9 +156,10 @@ export default function SideIncomeTracker() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
+      showToast('로그인되었습니다! 🎉', 'success');
     } catch (error) {
       console.error('로그인 실패:', error);
-      alert('로그인에 실패했습니다. 다시 시도해주세요.');
+      showToast('로그인에 실패했습니다. 다시 시도해주세요.', 'error');
     }
   };
 
@@ -144,9 +167,10 @@ export default function SideIncomeTracker() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      alert('로그아웃되었습니다.');
+      showToast('로그아웃되었습니다.', 'success');
     } catch (error) {
       console.error('로그아웃 실패:', error);
+      showToast('로그아웃에 실패했습니다.', 'error');
     }
   };
   
@@ -180,7 +204,7 @@ export default function SideIncomeTracker() {
 
   const handleAddIncome = () => {
     if (!name || !monthlyIncome || !monthlyHours || !taxRate) {
-      alert('모든 항목을 입력해주세요!');
+      showToast('모든 항목을 입력해주세요!', 'error');
       return;
     }
 
@@ -397,6 +421,32 @@ export default function SideIncomeTracker() {
         input, select {
           box-sizing: border-box;
         }
+        @keyframes slideInUp {
+          from {
+            transform: translateY(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        @keyframes slideOutDown {
+          from {
+            transform: translateY(0);
+            opacity: 1;
+          }
+          to {
+            transform: translateY(100%);
+            opacity: 0;
+          }
+        }
+        .toast-enter {
+          animation: slideInUp 0.3s ease-out;
+        }
+        .toast-exit {
+          animation: slideOutDown 0.3s ease-in;
+        }
       `}</style>
 
       <header style={{
@@ -574,23 +624,94 @@ export default function SideIncomeTracker() {
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
                   구분
                 </label>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                    outline: 'none',
-                    backgroundColor: 'white',
-                    boxSizing: 'border-box'
-                  }}
-                >
-                  <option value="본업">본업</option>
-                  <option value="부업">부업</option>
-                </select>
+                <div style={{ position: 'relative' }} data-dropdown>
+                  <div
+                    onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '12px',
+                      fontSize: '15px',
+                      backgroundColor: 'white',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      boxSizing: 'border-box',
+                      fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif"
+                    }}
+                  >
+                    <span style={{ color: '#1f2937' }}>{type}</span>
+                    <svg 
+                      width="20" 
+                      height="20" 
+                      viewBox="0 0 20 20" 
+                      fill="none"
+                      style={{
+                        transform: showTypeDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s'
+                      }}
+                    >
+                      <path 
+                        d="M5 7.5L10 12.5L15 7.5" 
+                        stroke="#60A5FA" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  {showTypeDropdown && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        marginTop: '4px',
+                        backgroundColor: 'white',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                        zIndex: 10,
+                        overflow: 'hidden'
+                      }}
+                    >
+                      {['본업', '부업'].map((option) => (
+                        <div
+                          key={option}
+                          onClick={() => {
+                            setType(option);
+                            setShowTypeDropdown(false);
+                          }}
+                          style={{
+                            padding: '12px 16px',
+                            cursor: 'pointer',
+                            backgroundColor: type === option ? '#eff6ff' : 'white',
+                            color: type === option ? '#60A5FA' : '#374151',
+                            fontWeight: type === option ? '600' : '400',
+                            fontSize: '15px',
+                            transition: 'background-color 0.15s',
+                            fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif"
+                          }}
+                          onMouseEnter={(e) => {
+                            if (type !== option) {
+                              e.target.style.backgroundColor = '#f9fafb';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (type !== option) {
+                              e.target.style.backgroundColor = 'white';
+                            }
+                          }}
+                        >
+                          {option}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div style={{ marginBottom: '16px' }}>
@@ -1220,6 +1341,37 @@ export default function SideIncomeTracker() {
           </div>
         )}
       </main>
+
+      {/* 토스트 알림 */}
+      {toast.show && (
+        <div
+          className="toast-enter"
+          style={{
+            position: 'fixed',
+            bottom: '100px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: toast.type === 'success' ? '#10b981' : '#ef4444',
+            color: 'white',
+            padding: '16px 24px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            zIndex: 1000,
+            maxWidth: '90%',
+            textAlign: 'center',
+            fontSize: '15px',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <span style={{ fontSize: '20px' }}>
+            {toast.type === 'success' ? '✓' : '✕'}
+          </span>
+          {toast.message}
+        </div>
+      )}
 
       <nav style={{
         position: 'fixed',
