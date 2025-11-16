@@ -479,7 +479,7 @@ export default function SideIncomeTracker() {
         textAlign: 'center'
       }}>
         <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1f2937', margin: 0 }}>
-          📑 N잡 수입 관리
+          N잡 수입 관리
         </h1>
       </header>
 
@@ -626,7 +626,7 @@ export default function SideIncomeTracker() {
                 </label>
                 <input
                   type="text"
-                  placeholder="예: 회사, 티스토리리"
+                  placeholder="예: 회사, 티스토리"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   style={{
