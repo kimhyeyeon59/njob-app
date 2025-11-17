@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "176646550330-nqpauc0jq1a7ud687gpg8ehipgb3mj70.apps.googleusercontent.com",
+          "client_id": "176646550330-53vm8v8j2b8fmubs4r8rqhoc2g1uclm5.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "app.njobtracker.sideincome",
-            "certificate_hash": "b81fb8b9be1343b5ac4c2755b93298900eb58fad"
+            "certificate_hash": "8773a1055e31a41dd9155c0bd2ddd4a8ce807964"
           }
         },
         {
