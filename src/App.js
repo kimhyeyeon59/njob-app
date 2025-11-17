@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
 // Firebase 설정
@@ -57,24 +57,6 @@ export default function SideIncomeTracker() {
     });
 
     return () => unsubscribe();
-  }, []);
-
-  // 리다이렉트 로그인 결과 처리 (모바일용)
-  useEffect(() => {
-    const checkRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          showToast('로그인되었습니다.', 'success');
-        }
-      } catch (error) {
-        console.error('리다이렉트 로그인 실패:', error);
-        if (error.code !== 'auth/popup-closed-by-user') {
-          showToast('로그인에 실패했습니다.', 'error');
-        }
-      }
-    };
-    checkRedirectResult();
   }, []);
 
   // 스플래시 화면 최소 2초 보장
@@ -193,18 +175,8 @@ export default function SideIncomeTracker() {
   const handleGoogleLogin = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      
-      // 모바일 환경 감지
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      
-      if (isMobile) {
-        // 모바일에서는 redirect 방식 사용
-        await signInWithRedirect(auth, provider);
-      } else {
-        // 데스크톱에서는 popup 방식 사용
-        await signInWithPopup(auth, provider);
-        showToast('로그인되었습니다.', 'success');
-      }
+      await signInWithPopup(auth, provider);
+      showToast('로그인되었습니다.', 'success');
     } catch (error) {
       console.error('로그인 실패:', error);
       showToast('로그인에 실패했습니다. 다시 시도해주세요.', 'error');
