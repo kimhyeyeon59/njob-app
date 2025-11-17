@@ -24,6 +24,13 @@ android {
     }
 }
 
+configurations.all {
+    resolutionStrategy {
+        // play-services-auth 버전을 21.0.0으로 강제
+        force 'com.google.android.gms:play-services-auth:21.0.0'
+    }
+}
+
 repositories {
     flatDir{
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
@@ -41,11 +48,14 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
     // Import the Firebase BoM
-    implementation platform('com.google.firebase:firebase-bom:34.5.0')
+    implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
+    // 1. Firebase 인증 (Authentication) SDK
+    implementation 'com.google.firebase:firebase-auth'
+    // 2. Google Play Services Auth (Google 로그인 자체를 위해 필수)
+    implementation 'com.google.android.gms:play-services-auth:21.0.0'
     // TODO: Add the dependencies for Firebase products you want to use
     // When using the BoM, don't specify versions in Firebase dependencies
-    implementation 'com.google.firebase:firebase-analytics'
-
+    implementation("com.google.firebase:firebase-analytics")
 }
 
 apply from: 'capacitor.build.gradle'

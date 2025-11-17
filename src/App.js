@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
 // Firebase 설정
@@ -174,12 +175,28 @@ export default function SideIncomeTracker() {
   // 구글 로그인
   const handleGoogleLogin = async () => {
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      showToast('로그인되었습니다.', 'success');
+      await FirebaseAuthentication.signInWithGoogle();
+      
+      // 로그인 직후 현재 유저 가져오기
+      const result = await FirebaseAuthentication.getCurrentUser();
+      
+      if (result && result.user) {
+        const nickname = generateNickname(result.user.uid);
+        setUser({
+          uid: result.user.uid,
+          email: result.user.email,
+          photoURL: result.user.photoUrl,  // 주의: photoUrl!
+          nickname: nickname
+        });
+        
+        await loadDataFromFirestore(result.user.uid);
+        showToast('로그인되었습니다.', 'success');
+      }
     } catch (error) {
       console.error('로그인 실패:', error);
-      showToast('로그인에 실패했습니다. 다시 시도해주세요.', 'error');
+      if (error.message && !error.message.includes('cancel')) {
+        showToast('로그인에 실패했습니다.', 'error');
+      }
     }
   };
 
@@ -187,9 +204,11 @@ export default function SideIncomeTracker() {
   const handleLogout = async () => {
     try {
       showToast('로그아웃되었습니다.', 'success');
-      // 토스트가 보이도록 약간 지연 후 로그아웃
       setTimeout(async () => {
-        await signOut(auth);
+        await FirebaseAuthentication.signOut();
+        // 로그아웃 후 명시적으로 user 상태 초기화
+        setUser(null);
+        loadDataFromLocalStorage();
       }, 500);
     } catch (error) {
       console.error('로그아웃 실패:', error);
@@ -946,85 +965,53 @@ export default function SideIncomeTracker() {
                     시간당 수익률 랭킹
                   </h2>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {sortedByHourlyRate.map((income, index) => {
-                      const maxRate = sortedByHourlyRate[0].hourlyRate;
-                      const percentage = (income.hourlyRate / maxRate * 100);
-                      return (
-                        <div key={income.id} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {sortedByHourlyRate.map((income, index) => {
+                    const maxRate = sortedByHourlyRate[0].hourlyRate;
+                    const percentage = (income.hourlyRate / maxRate * 100);
+                    return (
+                      <div key={income.id} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+                          backgroundColor: index === 0 ? '#60A5FA' : '#e5e7eb',
+                          color: index === 0 ? 'white' : '#6b7280',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '14px',
+                          fontWeight: '700',
+                          flexShrink: 0
+                        }}>
+                          {index + 1}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                            <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                              {income.name}
+                            </span>
+                            <span style={{ fontSize: '14px', fontWeight: '700', color: '#60A5FA' }}>
+                              {income.hourlyRate.toLocaleString()}원/h
+                            </span>
+                          </div>
                           <div style={{
-                            width: '28px',
-                            height: '28px',
-                            borderRadius: '50%',
-                            backgroundColor: index === 0 ? '#60A5FA' : '#e5e7eb',
-                            color: index === 0 ? 'white' : '#6b7280',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '14px',
-                            fontWeight: '700',
-                            flexShrink: 0
+                            width: '100%',
+                            height: '6px',
+                            backgroundColor: '#f3f4f6',
+                            borderRadius: '3px',
+                            overflow: 'hidden'
                           }}>
-                            {index + 1}
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                              <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
-                                {income.name}
-                              </span>
-                              <span style={{ fontSize: '14px', fontWeight: '700', color: '#60A5FA' }}>
-                                {income.hourlyRate.toLocaleString()}원/h
-                              </span>
-                            </div>
                             <div style={{
-                              width: '100%',
-                              height: '6px',
-                              backgroundColor: '#f3f4f6',
-                              borderRadius: '3px',
-                              overflow: 'hidden'
-                            }}>
-                              <div style={{
-                                width: `${percentage}%`,
-                                height: '100%',
-                                backgroundColor: '#60A5FA',
-                                transition: 'width 0.3s'
-                              }}></div>
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                            <button
-                              onClick={() => handleEdit(income)}
-                              style={{
-                                padding: '6px 12px',
-                                backgroundColor: '#dbeafe',
-                                color: '#1e40af',
-                                border: 'none',
-                                borderRadius: '8px',
-                                fontSize: '13px',
-                                fontWeight: '500',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              수정
-                            </button>
-                            <button
-                              onClick={() => deleteIncome(income.id)}
-                              style={{
-                                padding: '6px 12px',
-                                backgroundColor: '#fee2e2',
-                                color: '#ef4444',
-                                border: 'none',
-                                borderRadius: '8px',
-                                fontSize: '13px',
-                                fontWeight: '500',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              삭제
-                            </button>
+                              width: `${percentage}%`,
+                              height: '100%',
+                              backgroundColor: '#60A5FA',
+                              transition: 'width 0.3s'
+                            }}></div>
                           </div>
                         </div>
-                      );
-                    })}
+                      </div>
+                    );
+                  })}
                   </div>
                 </div>
               </>
@@ -1036,7 +1023,16 @@ export default function SideIncomeTracker() {
                 textAlign: 'center',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
               }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
+                <img 
+                  src="/icons/chart.svg" 
+                  alt="차트"
+                  style={{ 
+                    width: '64px', 
+                    height: '64px', 
+                    marginBottom: '16px',
+                    opacity: 0.5
+                  }}
+                />
                 <p style={{ fontSize: '16px', color: '#6b7280', marginBottom: '8px' }}>
                   {incomes.length === 0 
                     ? '아직 등록된 수입원이 없습니다'
@@ -1297,8 +1293,10 @@ export default function SideIncomeTracker() {
                       style={{ width: '24px', height: '24px', marginBottom: '8px' }}
                     />
                     <p style={{ fontSize: '13px', color: '#166534', lineHeight: '1.5', margin: 0 }}>
-                      데이터가 클라우드에 안전하게 저장되고 있어요!<br />
-                      어느 기기에서든 로그인하면 동일한 데이터를 볼 수 있습니다.
+                      데이터가 클라우드에<br />
+                      안전하게 저장되고 있어요!<br />
+                      어느 기기에서든 로그인하면<br />
+                      동일한 데이터를 볼 수 있습니다.
                     </p>
                   </div>
                 </>
@@ -1319,7 +1317,7 @@ export default function SideIncomeTracker() {
                   </div>
 
                   <h3 style={{ 
-                    fontSize: '16px', 
+                    fontSize: '14px', 
                     fontWeight: '600', 
                     color: '#1f2937', 
                     marginBottom: '8px' 
@@ -1378,8 +1376,10 @@ export default function SideIncomeTracker() {
                       style={{ width: '24px', height: '24px', marginBottom: '8px' }}
                     />
                     <p style={{ fontSize: '13px', color: '#92400e', lineHeight: '1.5', margin: 0 }}>
-                      현재 데이터는 이 기기에만 저장됩니다.<br />
-                      로그인하면 클라우드에 안전하게 보관돼요!
+                      현재 데이터는<br />
+                      이 기기에만 저장됩니다.<br />
+                      로그인하면 클라우드에<br />
+                      안전하게 보관돼요!
                     </p>
                   </div>
                 </>
