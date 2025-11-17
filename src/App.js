@@ -1486,7 +1486,10 @@ export default function SideIncomeTracker() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '4px'
+              gap: '4px',
+              WebkitTapHighlightColor: 'transparent',  
+              outline: 'none',                          
+              userSelect: 'none'
             }}
           >
             <img 
