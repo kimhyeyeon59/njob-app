@@ -59,23 +59,23 @@ export default function SideIncomeTracker() {
     return () => unsubscribe();
   }, []);
 
-  // 리다이렉트 로그인 처리
-useEffect(() => {
-  const checkRedirectResult = async () => {
-    try {
-      const result = await getRedirectResult(auth);
-      if (result) {
-        showToast('로그인되었습니다.', 'success');
+  // 리다이렉트 로그인 결과 처리 (모바일용)
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          showToast('로그인되었습니다.', 'success');
+        }
+      } catch (error) {
+        console.error('리다이렉트 로그인 실패:', error);
+        if (error.code !== 'auth/popup-closed-by-user') {
+          showToast('로그인에 실패했습니다.', 'error');
+        }
       }
-    } catch (error) {
-      console.error('리다이렉트 로그인 실패:', error);
-      if (error.code !== 'auth/popup-closed-by-user') {
-        showToast('로그인에 실패했습니다.', 'error');
-      }
-    }
-  };
-  checkRedirectResult();
-}, []);
+    };
+    checkRedirectResult();
+  }, []);
 
   // 스플래시 화면 최소 2초 보장
   useEffect(() => {
@@ -172,13 +172,13 @@ useEffect(() => {
         '말랑한', '귀여운', '상큼한', '활발한', '조용한', 
         '멋진', '용감한', '영리한', '친절한', '똑똑한',
         '달콤한', '부드러운', '화려한', '신비한', '따뜻한', 
-        '강력한', '차가운', '우아한', '재미있는', '빛나는' // 20개
+        '강력한', '차가운', '우아한', '재미있는', '빛나는'
     ];
     const nouns = [
         '세탁기', '냉장고', '선풍기', '청소기', '토스터', 
         '믹서기', '에어컨', '다리미', '전자레인지', '커피머신',
         '노트북', '키보드', '마우스', '모니터', '스피커', 
-        '책상', '의자', '연필', '지우개', '자전거' // 20개
+        '책상', '의자', '연필', '지우개', '자전거'
     ];
     
     const hash = uid.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -414,7 +414,7 @@ useEffect(() => {
         backgroundColor: '#60A5FA',
         flexDirection: 'column',
         paddingTop: 'env(safe-area-inset-top)',
-      paddingBottom: 'env(safe-area-inset-bottom)'
+        paddingBottom: 'env(safe-area-inset-bottom)'
       }}>
         <style>{`
           @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -434,9 +434,16 @@ useEffect(() => {
           }
         `}</style>
         <div style={{ textAlign: 'center' }}>
-          <div className="splash-logo" style={{ fontSize: '80px', marginBottom: '24px' }}>
-            📑
-          </div>
+          <img 
+            src="/icons/logo.png" 
+            alt="로고" 
+            className="splash-logo"
+            style={{ 
+              width: '80px', 
+              height: '80px',
+              marginBottom: '24px'
+            }}
+          />
           <h1 className="splash-text" style={{ 
             fontSize: '28px', 
             fontWeight: '700', 
@@ -1312,7 +1319,11 @@ useEffect(() => {
                     marginTop: '16px',
                     textAlign: 'center'
                   }}>
-                    <div style={{ fontSize: '20px', marginBottom: '8px' }}>☁️</div>
+                    <img 
+                      src="/icons/cloud.svg" 
+                      alt="클라우드"
+                      style={{ width: '24px', height: '24px', marginBottom: '8px' }}
+                    />
                     <p style={{ fontSize: '13px', color: '#166534', lineHeight: '1.5', margin: 0 }}>
                       데이터가 클라우드에 안전하게 저장되고 있어요!<br />
                       어느 기기에서든 로그인하면 동일한 데이터를 볼 수 있습니다.
@@ -1373,7 +1384,11 @@ useEffect(() => {
                       margin: '0 auto'
                     }}
                   >
-                    <span style={{ fontSize: '18px' }}>🔐</span>
+                    <img 
+                      src="/icons/lock.svg" 
+                      alt="잠금"
+                      style={{ width: '18px', height: '18px' }}
+                    />
                     구글로 로그인
                   </button>
 
@@ -1385,7 +1400,11 @@ useEffect(() => {
                     marginTop: '16px',
                     textAlign: 'center'
                   }}>
-                    <div style={{ fontSize: '20px', marginBottom: '8px' }}>💾</div>
+                    <img 
+                      src="/icons/floppy.svg" 
+                      alt="로컬저장"
+                      style={{ width: '24px', height: '24px', marginBottom: '8px' }}
+                    />
                     <p style={{ fontSize: '13px', color: '#92400e', lineHeight: '1.5', margin: 0 }}>
                       현재 데이터는 이 기기에만 저장됩니다.<br />
                       로그인하면 클라우드에 안전하게 보관돼요!
@@ -1445,15 +1464,15 @@ useEffect(() => {
         borderTop: '1px solid #e5e7eb',
         display: 'flex',
         justifyContent: 'space-around',
-        padding: '8px 0 12px 0',
+        padding: '8px 0',
         paddingBottom: `calc(12px + env(safe-area-inset-bottom))`,
         boxShadow: '0 -2px 10px rgba(0,0,0,0.05)'
       }}>
         {[
-          { id: 'add', icon: '➕', label: '추가' },
-          { id: 'graph', icon: '📊', label: '그래프' },
-          { id: 'dashboard', icon: '📶', label: '대시보드' },
-          { id: 'my', icon: '👤', label: '마이' }
+          { id: 'add', icon: 'plus.svg', label: '추가' },
+          { id: 'graph', icon: 'chart.svg', label: '그래프' },
+          { id: 'dashboard', icon: 'dashboard.svg', label: '대시보드' },
+          { id: 'my', icon: 'person.svg', label: '마이' }
         ].map(tab => (
           <button
             key={tab.id}
@@ -1470,9 +1489,15 @@ useEffect(() => {
               gap: '4px'
             }}
           >
-            <div style={{ fontSize: '24px', opacity: activeTab === tab.id ? 1 : 0.4 }}>
-              {tab.icon}
-            </div>
+            <img 
+              src={`/icons/${tab.icon}`}
+              alt={tab.label}
+              style={{ 
+                width: '24px', 
+                height: '24px',
+                opacity: activeTab === tab.id ? 1 : 0.4
+              }}
+            />
             <span style={{
               fontSize: '11px',
               fontWeight: '500',
