@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
@@ -19,6 +19,258 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// 수입원 추가/수정 탭 컴포넌트 (분리)
+const AddIncomeTab = React.memo(({ 
+  editingId,
+  name, setName,
+  type, setType,
+  monthlyIncome, setMonthlyIncome,
+  taxRate, setTaxRate,
+  monthlyHours, setMonthlyHours,
+  showTypeDropdown, setShowTypeDropdown,
+  handleAddIncome,
+  handleCancelEdit
+}) => {
+  return (
+    <div style={{ padding: '16px', maxWidth: '600px', margin: '0 auto' }}>
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '16px',
+        padding: '20px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+      }}>
+        <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px', color: '#1f2937' }}>
+          {editingId ? '수입원 수정' : '새 수입원 추가'}
+        </h2>
+
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
+            이름
+          </label>
+          <input
+            type="text"
+            placeholder="예: 회사, 티스토리"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '12px',
+              fontSize: '15px',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
+            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+          />
+        </div>
+
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
+            구분
+          </label>
+          <div style={{ position: 'relative' }} data-dropdown>
+            <div
+              onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: '1px solid #d1d5db',
+                borderRadius: '12px',
+                fontSize: '15px',
+                backgroundColor: 'white',
+                cursor: 'pointer',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                boxSizing: 'border-box',
+                fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif"
+              }}
+            >
+              <span style={{ color: '#1f2937' }}>{type}</span>
+              <svg 
+                width="20" 
+                height="20" 
+                viewBox="0 0 20 20" 
+                fill="none"
+                style={{
+                  transform: showTypeDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s'
+                }}
+              >
+                <path 
+                  d="M5 7.5L10 12.5L15 7.5" 
+                  stroke="#60A5FA" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            {showTypeDropdown && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  marginTop: '4px',
+                  backgroundColor: 'white',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                  zIndex: 10,
+                  overflow: 'hidden'
+                }}
+              >
+                {['본업', '부업'].map((option) => (
+                  <div
+                    key={option}
+                    onClick={() => {
+                      setType(option);
+                      setShowTypeDropdown(false);
+                    }}
+                    style={{
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      backgroundColor: type === option ? '#eff6ff' : 'white',
+                      color: type === option ? '#60A5FA' : '#374151',
+                      fontWeight: type === option ? '600' : '400',
+                      fontSize: '15px',
+                      transition: 'background-color 0.15s',
+                      fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif"
+                    }}
+                    onMouseEnter={(e) => {
+                      if (type !== option) {
+                        e.target.style.backgroundColor = '#f9fafb';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (type !== option) {
+                        e.target.style.backgroundColor = 'white';
+                      }
+                    }}
+                  >
+                    {option}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
+            세전 월 수입 (원)
+          </label>
+          <input
+            type="number"
+            placeholder="3000000"
+            value={monthlyIncome}
+            onChange={(e) => setMonthlyIncome(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '12px',
+              fontSize: '15px',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
+            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+          />
+        </div>
+
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
+            세금 (%)
+          </label>
+          <input
+            type="number"
+            step="0.1"
+            placeholder="3.3"
+            value={taxRate}
+            onChange={(e) => setTaxRate(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '12px',
+              fontSize: '15px',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
+            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+          />
+        </div>
+
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
+            월 투입 시간
+          </label>
+          <input
+            type="number"
+            placeholder="160"
+            value={monthlyHours}
+            onChange={(e) => setMonthlyHours(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '12px',
+              fontSize: '15px',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
+            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {editingId && (
+            <button
+              onClick={handleCancelEdit}
+              style={{
+                flex: 1,
+                padding: '14px',
+                backgroundColor: '#f3f4f6',
+                color: '#374151',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}
+            >
+              취소
+            </button>
+          )}
+          <button
+            onClick={handleAddIncome}
+            style={{
+              flex: 1,
+              padding: '14px',
+              backgroundColor: '#60A5FA',
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+          >
+            {editingId ? '수정하기' : '추가하기'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 export default function SideIncomeTracker() {
   const [activeTab, setActiveTab] = useState('graph');
   const [incomes, setIncomes] = useState([]);
@@ -31,6 +283,8 @@ export default function SideIncomeTracker() {
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [tempYear, setTempYear] = useState(null);
   const [tempMonth, setTempMonth] = useState(null);
+  const yearScrollRef = useRef(null);
+  const monthScrollRef = useRef(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
@@ -39,25 +293,36 @@ export default function SideIncomeTracker() {
 
   // 로그인 상태 감지
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const nickname = generateNickname(firebaseUser.uid);
-        setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          photoURL: firebaseUser.photoURL,
-          nickname: nickname
-        });
+    const initAuth = async () => {
+      try {
+        const result = await FirebaseAuthentication.getCurrentUser();
         
-        await loadDataFromFirestore(firebaseUser.uid);
-      } else {
+        if (result && result.user) {
+          console.log('✅ 저장된 로그인 정보 발견:', result.user.email);
+          const nickname = generateNickname(result.user.uid);
+          setUser({
+            uid: result.user.uid,
+            email: result.user.email,
+            photoURL: result.user.photoUrl,
+            nickname: nickname
+          });
+          
+          await loadDataFromFirestore(result.user.uid);
+        } else {
+          console.log('ℹ️ 저장된 로그인 정보 없음');
+          setUser(null);
+          loadDataFromLocalStorage();
+        }
+      } catch (error) {
+        console.log('ℹ️ 로그인 체크:', error.message);
         setUser(null);
         loadDataFromLocalStorage();
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    };
+  
+    initAuth();
   }, []);
 
   // 스플래시 화면 최소 2초 보장
@@ -77,17 +342,84 @@ export default function SideIncomeTracker() {
     }, 3000);
   };
 
-  // 드롭다운 외부 클릭 시 닫기
+  // 드롭다운 외부 클릭 시 닫기 (최적화)
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showTypeDropdown && !event.target.closest('[data-dropdown]')) {
+      if (!event.target.closest('[data-dropdown]')) {
         setShowTypeDropdown(false);
       }
     };
 
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [showTypeDropdown]);
+    document.addEventListener('mousedown', handleClickOutside, { passive: true });
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Firestore에서 데이터 불러오기
+  const loadDataFromFirestore = async (uid) => {
+    try {
+      console.log('📥 Firestore에서 데이터 불러오기 시도:', uid);
+      
+      const localData = localStorage.getItem('njob-incomes');
+      const localIncomes = localData ? JSON.parse(localData) : [];
+      
+      const docRef = doc(db, 'users', uid);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const firestoreIncomes = data.incomes || [];
+        console.log('✅ Firestore 데이터 발견! 개수:', firestoreIncomes.length);
+        
+        if (localIncomes.length > 0) {
+          console.log('🔄 로컬 데이터와 병합:', localIncomes.length, '개');
+          
+          const localIds = new Set(localIncomes.map(i => i.id));
+          const onlyInFirestore = firestoreIncomes.filter(i => !localIds.has(i.id));
+          const merged = [...localIncomes, ...onlyInFirestore];
+          
+          setIncomes(merged);
+          localStorage.setItem('njob-incomes', JSON.stringify(merged));
+          
+          await saveDataToFirestore(uid, merged);
+          console.log('✅ 병합 완료:', merged.length, '개');
+        } else {
+          setIncomes(firestoreIncomes);
+          localStorage.setItem('njob-incomes', JSON.stringify(firestoreIncomes));
+        }
+      } else {
+        console.log('⚠️ Firestore에 데이터 없음.');
+        
+        if (localIncomes.length > 0) {
+          console.log('📤 로컬 데이터를 Firestore에 업로드:', localIncomes.length, '개');
+          setIncomes(localIncomes);
+          await saveDataToFirestore(uid, localIncomes);
+        } else {
+          console.log('ℹ️ 로컬 데이터도 없음. 빈 상태로 시작');
+          setIncomes([]);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Firestore 데이터 로드 실패:', error);
+      console.error('에러 상세:', error.message, error.code);
+      loadDataFromLocalStorage();
+    }
+  };
+
+  // Firestore에 데이터 저장
+  const saveDataToFirestore = async (uid, data) => {
+    try {
+      console.log('💾 Firestore 저장 시도:', uid, '데이터 개수:', data.length);
+      const docRef = doc(db, 'users', uid);
+      await setDoc(docRef, {
+        incomes: data,
+        updatedAt: new Date().toISOString()
+      });
+      console.log('✅ Firestore 저장 성공!');
+    } catch (error) {
+      console.error('❌ Firestore 저장 실패:', error);
+      console.error('에러 상세:', error.message, error.code);
+    }
+  };
 
   // localStorage에서 데이터 불러오기
   const loadDataFromLocalStorage = () => {
@@ -101,55 +433,7 @@ export default function SideIncomeTracker() {
     }
   };
 
-  // Firestore에서 데이터 불러오기
-  const loadDataFromFirestore = async (uid) => {
-    try {
-      const docRef = doc(db, 'users', uid);
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setIncomes(data.incomes || []);
-        localStorage.setItem('njob-incomes', JSON.stringify(data.incomes || []));
-      } else {
-        const localData = localStorage.getItem('njob-incomes');
-        if (localData) {
-          const parsedData = JSON.parse(localData);
-          setIncomes(parsedData);
-          await saveDataToFirestore(uid, parsedData);
-        }
-      }
-    } catch (error) {
-      console.error('Firestore 데이터 로드 실패:', error);
-      loadDataFromLocalStorage();
-    }
-  };
-
-  // Firestore에 데이터 저장
-  const saveDataToFirestore = async (uid, data) => {
-    try {
-      const docRef = doc(db, 'users', uid);
-      await setDoc(docRef, {
-        incomes: data,
-        updatedAt: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Firestore 저장 실패:', error);
-    }
-  };
-
-  // incomes 변경될 때마다 저장
-  useEffect(() => {
-    if (loading) return;
-    
-    localStorage.setItem('njob-incomes', JSON.stringify(incomes));
-    
-    if (user) {
-      saveDataToFirestore(user.uid, incomes);
-    }
-  }, [incomes, user, loading]);
-
-  // 랜덤 닉네임 생성 (UID 뒷 4자리로 유니크 보장)
+  // 랜덤 닉네임 생성
   const generateNickname = (uid) => {
     const adjectives = [
         '말랑한', '귀여운', '상큼한', '활발한', '조용한', 
@@ -177,7 +461,6 @@ export default function SideIncomeTracker() {
     try {
       await FirebaseAuthentication.signInWithGoogle();
       
-      // 로그인 직후 현재 유저 가져오기
       const result = await FirebaseAuthentication.getCurrentUser();
       
       if (result && result.user) {
@@ -185,7 +468,7 @@ export default function SideIncomeTracker() {
         setUser({
           uid: result.user.uid,
           email: result.user.email,
-          photoURL: result.user.photoUrl,  // 주의: photoUrl!
+          photoURL: result.user.photoUrl,
           nickname: nickname
         });
         
@@ -206,7 +489,6 @@ export default function SideIncomeTracker() {
       showToast('로그아웃되었습니다.', 'success');
       setTimeout(async () => {
         await FirebaseAuthentication.signOut();
-        // 로그아웃 후 명시적으로 user 상태 초기화
         setUser(null);
         loadDataFromLocalStorage();
       }, 500);
@@ -229,6 +511,31 @@ export default function SideIncomeTracker() {
     setTempMonth(parseInt(month));
     setShowMonthPicker(true);
   };
+  
+  // 피커 열린 후 스크롤 위치 조정
+  useEffect(() => {
+    if (showMonthPicker && yearScrollRef.current && monthScrollRef.current) {
+      setTimeout(() => {
+        const yearItems = yearScrollRef.current.children;
+        const currentYearIndex = Array.from(yearItems).findIndex(
+          item => parseInt(item.textContent) === tempYear
+        );
+        if (currentYearIndex >= 0) {
+          const itemHeight = 44;
+          const scrollPosition = (currentYearIndex - 2) * itemHeight;
+          yearScrollRef.current.scrollTop = Math.max(0, scrollPosition);
+        }
+
+        const monthItems = monthScrollRef.current.children;
+        const currentMonthIndex = tempMonth - 1;
+        if (currentMonthIndex >= 0) {
+          const itemHeight = 44;
+          const scrollPosition = (currentMonthIndex - 2) * itemHeight;
+          monthScrollRef.current.scrollTop = Math.max(0, scrollPosition);
+        }
+      }, 50);
+    }
+  }, [showMonthPicker, tempYear, tempMonth]);
 
   const confirmMonthSelection = () => {
     setSelectedMonth(`${tempYear}-${String(tempMonth).padStart(2, '0')}`);
@@ -250,15 +557,36 @@ export default function SideIncomeTracker() {
       return;
     }
 
+    const income = Number(monthlyIncome);
+    const hours = Number(monthlyHours);
+    const tax = Number(taxRate);
+
+    if (isNaN(income) || income <= 0) {
+      showToast('월 수입을 올바르게 입력해주세요!', 'error');
+      return;
+    }
+
+    if (isNaN(hours) || hours <= 0) {
+      showToast('월 투입 시간을 올바르게 입력해주세요!', 'error');
+      return;
+    }
+
+    if (isNaN(tax) || tax < 0 || tax > 100) {
+      showToast('세금은 0~100 사이로 입력해주세요!', 'error');
+      return;
+    }
+
     const currentMonth = getCurrentMonth();
     const incomeData = {
-      monthlyIncome: Number(monthlyIncome),
-      monthlyHours: Number(monthlyHours),
-      taxRate: Number(taxRate)
+      monthlyIncome: income,
+      monthlyHours: hours,
+      taxRate: tax
     };
 
+    let updatedIncomes;
+
     if (editingId) {
-      setIncomes(incomes.map(income => {
+      updatedIncomes = incomes.map(income => {
         if (income.id === editingId) {
           const newHistory = [...income.history];
           const currentMonthIndex = newHistory.findIndex(h => h.validFrom === currentMonth);
@@ -276,7 +604,9 @@ export default function SideIncomeTracker() {
           };
         }
         return income;
-      }));
+      });
+
+      setIncomes(updatedIncomes);
       setEditingId(null);
     } else {
       const newIncome = {
@@ -290,8 +620,15 @@ export default function SideIncomeTracker() {
           ...incomeData
         }]
       };
-      setIncomes([...incomes, newIncome]);
+      updatedIncomes = [...incomes, newIncome];
+      setIncomes(updatedIncomes);
     }
+
+    if (user) {
+      saveDataToFirestore(user.uid, updatedIncomes);
+    }
+
+    localStorage.setItem('njob-incomes', JSON.stringify(updatedIncomes));
 
     setName('');
     setType('본업');
@@ -323,11 +660,33 @@ export default function SideIncomeTracker() {
   
   const deleteIncome = (id) => {
     const currentMonth = getCurrentMonth();
-    setIncomes(incomes.map(income => 
+    const updatedIncomes = incomes.map(income =>
       income.id === id 
         ? { ...income, deletedAt: currentMonth }
         : income
-    ));
+    );
+    setIncomes(updatedIncomes);
+    
+    if (user) {
+      saveDataToFirestore(user.uid, updatedIncomes);
+    }
+
+    localStorage.setItem('njob-incomes', JSON.stringify(updatedIncomes));
+  };
+
+  const deleteAllIncomes = () => {
+    if (window.confirm('정말 모든 수입원을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
+      const emptyIncomes = [];
+      setIncomes(emptyIncomes);
+      
+      if (user) {
+        saveDataToFirestore(user.uid, emptyIncomes);
+      }
+      
+      localStorage.setItem('njob-incomes', JSON.stringify(emptyIncomes));
+      
+      showToast('모든 수입원이 삭제되었습니다.', 'success');
+    }
   };
   
   const getIncomeDataForMonth = (income, month) => {
@@ -383,10 +742,23 @@ export default function SideIncomeTracker() {
     return months.reverse();
   };
   
-  const filteredIncomes = getIncomesForMonth(selectedMonth);
-  const totalBeforeTax = filteredIncomes.reduce((sum, income) => sum + income.monthlyIncome, 0);
-  const totalAfterTax = filteredIncomes.reduce((sum, income) => sum + income.afterTax, 0);
-  const sortedByHourlyRate = [...filteredIncomes].sort((a, b) => b.hourlyRate - a.hourlyRate);
+  // useMemo로 계산 캐싱 (성능 최적화!)
+  const filteredIncomes = useMemo(() => {
+    return getIncomesForMonth(selectedMonth);
+  }, [selectedMonth, incomes]);
+
+  const totalBeforeTax = useMemo(() => {
+    return filteredIncomes.reduce((sum, income) => sum + income.monthlyIncome, 0);
+  }, [filteredIncomes]);
+
+  const totalAfterTax = useMemo(() => {
+    return filteredIncomes.reduce((sum, income) => sum + income.afterTax, 0);
+  }, [filteredIncomes]);
+
+  const sortedByHourlyRate = useMemo(() => {
+    return [...filteredIncomes].sort((a, b) => b.hourlyRate - a.hourlyRate);
+  }, [filteredIncomes]);
+
   const colors = ['#60A5FA', '#34D399', '#FBBF24', '#F87171', '#A78BFA', '#FB923C'];
   
   const formatMonth = (monthStr) => {
@@ -558,13 +930,15 @@ export default function SideIncomeTracker() {
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#6b7280' }}>
                     년도
                   </label>
-                  <div style={{
-                    height: '150px',
-                    overflowY: 'scroll',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '12px',
-                    padding: '8px'
-                  }}>
+                  <div 
+                    ref={yearScrollRef}
+                    style={{
+                      height: '150px',
+                      overflowY: 'scroll',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      padding: '8px'
+                    }}>
                     {[2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030].map(year => (
                       <div
                         key={year}
@@ -590,13 +964,15 @@ export default function SideIncomeTracker() {
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#6b7280' }}>
                     월
                   </label>
-                  <div style={{
-                    height: '150px',
-                    overflowY: 'scroll',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '12px',
-                    padding: '8px'
-                  }}>
+                  <div 
+                    ref={monthScrollRef}
+                    style={{
+                      height: '150px',
+                      overflowY: 'scroll',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      padding: '8px'
+                    }}>
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(month => (
                       <div
                         key={month}
@@ -640,242 +1016,23 @@ export default function SideIncomeTracker() {
         )}
 
         {activeTab === 'add' && (
-          <div style={{ padding: '16px', maxWidth: '600px', margin: '0 auto' }}>
-            <div style={{
-              backgroundColor: 'white',
-              borderRadius: '16px',
-              padding: '20px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-            }}>
-              <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px', color: '#1f2937' }}>
-                {editingId ? '수입원 수정' : '새 수입원 추가'}
-              </h2>
-
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
-                  이름
-                </label>
-                <input
-                  type="text"
-                  placeholder="예: 회사, 티스토리"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                />
-              </div>
-
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
-                  구분
-                </label>
-                <div style={{ position: 'relative' }} data-dropdown>
-                  <div
-                    onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '12px',
-                      fontSize: '15px',
-                      backgroundColor: 'white',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      boxSizing: 'border-box',
-                      fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif"
-                    }}
-                  >
-                    <span style={{ color: '#1f2937' }}>{type}</span>
-                    <svg 
-                      width="20" 
-                      height="20" 
-                      viewBox="0 0 20 20" 
-                      fill="none"
-                      style={{
-                        transform: showTypeDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
-                        transition: 'transform 0.2s'
-                      }}
-                    >
-                      <path 
-                        d="M5 7.5L10 12.5L15 7.5" 
-                        stroke="#60A5FA" 
-                        strokeWidth="2" 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  {showTypeDropdown && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        right: 0,
-                        marginTop: '4px',
-                        backgroundColor: 'white',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '12px',
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                        zIndex: 10,
-                        overflow: 'hidden'
-                      }}
-                    >
-                      {['본업', '부업'].map((option) => (
-                        <div
-                          key={option}
-                          onClick={() => {
-                            setType(option);
-                            setShowTypeDropdown(false);
-                          }}
-                          style={{
-                            padding: '12px 16px',
-                            cursor: 'pointer',
-                            backgroundColor: type === option ? '#eff6ff' : 'white',
-                            color: type === option ? '#60A5FA' : '#374151',
-                            fontWeight: type === option ? '600' : '400',
-                            fontSize: '15px',
-                            transition: 'background-color 0.15s',
-                            fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif"
-                          }}
-                          onMouseEnter={(e) => {
-                            if (type !== option) {
-                              e.target.style.backgroundColor = '#f9fafb';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (type !== option) {
-                              e.target.style.backgroundColor = 'white';
-                            }
-                          }}
-                        >
-                          {option}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
-                  세전 월 수입 (원)
-                </label>
-                <input
-                  type="number"
-                  placeholder="3000000"
-                  value={monthlyIncome}
-                  onChange={(e) => setMonthlyIncome(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                />
-              </div>
-
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
-                  세금 (%)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  placeholder="3.3"
-                  value={taxRate}
-                  onChange={(e) => setTaxRate(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                />
-              </div>
-
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
-                  월 투입 시간
-                </label>
-                <input
-                  type="number"
-                  placeholder="160"
-                  value={monthlyHours}
-                  onChange={(e) => setMonthlyHours(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {editingId && (
-                  <button
-                    onClick={handleCancelEdit}
-                    style={{
-                      flex: 1,
-                      padding: '14px',
-                      backgroundColor: '#f3f4f6',
-                      color: '#374151',
-                      border: 'none',
-                      borderRadius: '12px',
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    취소
-                  </button>
-                )}
-                <button
-                  onClick={handleAddIncome}
-                  style={{
-                    flex: 1,
-                    padding: '14px',
-                    backgroundColor: '#60A5FA',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '12px',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {editingId ? '수정하기' : '추가하기'}
-                </button>
-              </div>
-            </div>
-          </div>
+          <AddIncomeTab
+            editingId={editingId}
+            name={name}
+            setName={setName}
+            type={type}
+            setType={setType}
+            monthlyIncome={monthlyIncome}
+            setMonthlyIncome={setMonthlyIncome}
+            taxRate={taxRate}
+            setTaxRate={setTaxRate}
+            monthlyHours={monthlyHours}
+            setMonthlyHours={setMonthlyHours}
+            showTypeDropdown={showTypeDropdown}
+            setShowTypeDropdown={setShowTypeDropdown}
+            handleAddIncome={handleAddIncome}
+            handleCancelEdit={handleCancelEdit}
+          />
         )}
 
         {activeTab === 'graph' && (
@@ -1125,9 +1282,26 @@ export default function SideIncomeTracker() {
                 padding: '24px',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
               }}>
-                <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#1f2937' }}>
-                  수입원 상세
-                </h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', margin: 0 }}>
+                    수입원 상세
+                  </h2>
+                  <button
+                    onClick={deleteAllIncomes}
+                    style={{
+                      padding: '4px 10px',
+                      backgroundColor: 'transparent',
+                      color: '#ef4444',
+                      border: '1px solid #ef4444',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      fontWeight: '500',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    전체 삭제
+                  </button>
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {sortedByHourlyRate.map((income) => (
                     <div key={income.id} style={{
@@ -1229,6 +1403,11 @@ export default function SideIncomeTracker() {
                         src={user.photoURL} 
                         alt="프로필" 
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => {
+                          console.log('❌ 이미지 로드 실패:', user.photoURL);
+                          e.target.style.display = 'none';
+                          e.target.parentElement.innerHTML = '<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; fontSize: 36px">👤</div>';
+                        }}
                       />
                     ) : (
                       <div style={{
@@ -1389,7 +1568,6 @@ export default function SideIncomeTracker() {
         )}
       </main>
 
-      {/* 토스트 알림 */}
       {toast.show && (
         <div
           className="toast-enter"

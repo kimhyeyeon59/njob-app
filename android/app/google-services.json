@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "176646550330-ptvknmld3j07vbkp6sdc1l65uovcpp9g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.njobtracker.sideincome",
+            "certificate_hash": "801a34bf14800c7df59290bcd46528506595e1ab"
+          }
+        },
+        {
           "client_id": "176646550330-hldo4q2h7spib1h3p4jj0jonal2t3pmj.apps.googleusercontent.com",
           "client_type": 3
         }
