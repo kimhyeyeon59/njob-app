@@ -16,6 +16,10 @@ const config: CapacitorConfig = {
       skipNativeAuth: false,
       providers: ['google.com'],
       googleWebClientId: '176646550330-hldo4q2h7spib1h3p4jj0jonal2t3pmj.apps.googleusercontent.com'
+    },
+    Keyboard: {
+      resize: 'native',
+      resizeOnFullScreen: true
     }
   },
   android: {

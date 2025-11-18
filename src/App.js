@@ -16,260 +16,7 @@ const firebaseConfig = {
 
 // Firebase 초기화
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const db = getFirestore(app);
-
-// 수입원 추가/수정 탭 컴포넌트 (분리)
-const AddIncomeTab = React.memo(({ 
-  editingId,
-  name, setName,
-  type, setType,
-  monthlyIncome, setMonthlyIncome,
-  taxRate, setTaxRate,
-  monthlyHours, setMonthlyHours,
-  showTypeDropdown, setShowTypeDropdown,
-  handleAddIncome,
-  handleCancelEdit
-}) => {
-  return (
-    <div style={{ padding: '16px', maxWidth: '600px', margin: '0 auto' }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        padding: '20px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-      }}>
-        <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px', color: '#1f2937' }}>
-          {editingId ? '수입원 수정' : '새 수입원 추가'}
-        </h2>
-
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
-            이름
-          </label>
-          <input
-            type="text"
-            placeholder="예: 회사, 티스토리"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              border: '1px solid #d1d5db',
-              borderRadius: '12px',
-              fontSize: '15px',
-              outline: 'none',
-              boxSizing: 'border-box'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-          />
-        </div>
-
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
-            구분
-          </label>
-          <div style={{ position: 'relative' }} data-dropdown>
-            <div
-              onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '1px solid #d1d5db',
-                borderRadius: '12px',
-                fontSize: '15px',
-                backgroundColor: 'white',
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                boxSizing: 'border-box',
-                fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif"
-              }}
-            >
-              <span style={{ color: '#1f2937' }}>{type}</span>
-              <svg 
-                width="20" 
-                height="20" 
-                viewBox="0 0 20 20" 
-                fill="none"
-                style={{
-                  transform: showTypeDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.2s'
-                }}
-              >
-                <path 
-                  d="M5 7.5L10 12.5L15 7.5" 
-                  stroke="#60A5FA" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            {showTypeDropdown && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  marginTop: '4px',
-                  backgroundColor: 'white',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                  zIndex: 10,
-                  overflow: 'hidden'
-                }}
-              >
-                {['본업', '부업'].map((option) => (
-                  <div
-                    key={option}
-                    onClick={() => {
-                      setType(option);
-                      setShowTypeDropdown(false);
-                    }}
-                    style={{
-                      padding: '12px 16px',
-                      cursor: 'pointer',
-                      backgroundColor: type === option ? '#eff6ff' : 'white',
-                      color: type === option ? '#60A5FA' : '#374151',
-                      fontWeight: type === option ? '600' : '400',
-                      fontSize: '15px',
-                      transition: 'background-color 0.15s',
-                      fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif"
-                    }}
-                    onMouseEnter={(e) => {
-                      if (type !== option) {
-                        e.target.style.backgroundColor = '#f9fafb';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (type !== option) {
-                        e.target.style.backgroundColor = 'white';
-                      }
-                    }}
-                  >
-                    {option}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
-            세전 월 수입 (원)
-          </label>
-          <input
-            type="number"
-            placeholder="3000000"
-            value={monthlyIncome}
-            onChange={(e) => setMonthlyIncome(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              border: '1px solid #d1d5db',
-              borderRadius: '12px',
-              fontSize: '15px',
-              outline: 'none',
-              boxSizing: 'border-box'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-          />
-        </div>
-
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
-            세금 (%)
-          </label>
-          <input
-            type="number"
-            step="0.1"
-            placeholder="3.3"
-            value={taxRate}
-            onChange={(e) => setTaxRate(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              border: '1px solid #d1d5db',
-              borderRadius: '12px',
-              fontSize: '15px',
-              outline: 'none',
-              boxSizing: 'border-box'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-          />
-        </div>
-
-        <div style={{ marginBottom: '24px' }}>
-          <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
-            월 투입 시간
-          </label>
-          <input
-            type="number"
-            placeholder="160"
-            value={monthlyHours}
-            onChange={(e) => setMonthlyHours(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              border: '1px solid #d1d5db',
-              borderRadius: '12px',
-              fontSize: '15px',
-              outline: 'none',
-              boxSizing: 'border-box'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-          />
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {editingId && (
-            <button
-              onClick={handleCancelEdit}
-              style={{
-                flex: 1,
-                padding: '14px',
-                backgroundColor: '#f3f4f6',
-                color: '#374151',
-                border: 'none',
-                borderRadius: '12px',
-                fontSize: '16px',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
-            >
-              취소
-            </button>
-          )}
-          <button
-            onClick={handleAddIncome}
-            style={{
-              flex: 1,
-              padding: '14px',
-              backgroundColor: '#60A5FA',
-              color: 'white',
-              border: 'none',
-              borderRadius: '12px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer'
-            }}
-          >
-            {editingId ? '수정하기' : '추가하기'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-});
 
 export default function SideIncomeTracker() {
   const [activeTab, setActiveTab] = useState('graph');
@@ -342,7 +89,7 @@ export default function SideIncomeTracker() {
     }, 3000);
   };
 
-  // 드롭다운 외부 클릭 시 닫기 (최적화)
+  // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!event.target.closest('[data-dropdown]')) {
@@ -742,7 +489,7 @@ export default function SideIncomeTracker() {
     return months.reverse();
   };
   
-  // useMemo로 계산 캐싱 (성능 최적화!)
+  // useMemo로 계산 캐싱
   const filteredIncomes = useMemo(() => {
     return getIncomesForMonth(selectedMonth);
   }, [selectedMonth, incomes]);
@@ -1016,26 +763,245 @@ export default function SideIncomeTracker() {
         )}
 
         {activeTab === 'add' && (
-          <AddIncomeTab
-            editingId={editingId}
-            name={name}
-            setName={setName}
-            type={type}
-            setType={setType}
-            monthlyIncome={monthlyIncome}
-            setMonthlyIncome={setMonthlyIncome}
-            taxRate={taxRate}
-            setTaxRate={setTaxRate}
-            monthlyHours={monthlyHours}
-            setMonthlyHours={setMonthlyHours}
-            showTypeDropdown={showTypeDropdown}
-            setShowTypeDropdown={setShowTypeDropdown}
-            handleAddIncome={handleAddIncome}
-            handleCancelEdit={handleCancelEdit}
-          />
+          <div style={{ padding: '16px', maxWidth: '600px', margin: '0 auto' }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '20px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px', color: '#1f2937' }}>
+                {editingId ? '수입원 수정' : '새 수입원 추가'}
+              </h2>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
+                  이름
+                </label>
+                <input
+                  type="text"
+                  placeholder="예: 회사, 티스토리"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '12px',
+                    fontSize: '15px',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
+                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
+                  구분
+                </label>
+                <div style={{ position: 'relative' }} data-dropdown>
+                  <div
+                    onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '12px',
+                      fontSize: '15px',
+                      backgroundColor: 'white',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      boxSizing: 'border-box',
+                      fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif"
+                    }}
+                  >
+                    <span style={{ color: '#1f2937' }}>{type}</span>
+                    <svg 
+                      width="20" 
+                      height="20" 
+                      viewBox="0 0 20 20" 
+                      fill="none"
+                      style={{
+                        transform: showTypeDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s'
+                      }}
+                    >
+                      <path 
+                        d="M5 7.5L10 12.5L15 7.5" 
+                        stroke="#60A5FA" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  {showTypeDropdown && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        marginTop: '4px',
+                        backgroundColor: 'white',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                        zIndex: 10,
+                        overflow: 'hidden'
+                      }}
+                    >
+                      {['본업', '부업'].map((option) => (
+                        <div
+                          key={option}
+                          onClick={() => {
+                            setType(option);
+                            setShowTypeDropdown(false);
+                          }}
+                          style={{
+                            padding: '12px 16px',
+                            cursor: 'pointer',
+                            backgroundColor: type === option ? '#eff6ff' : 'white',
+                            color: type === option ? '#60A5FA' : '#374151',
+                            fontWeight: type === option ? '600' : '400',
+                            fontSize: '15px',
+                            transition: 'background-color 0.15s',
+                            fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif"
+                          }}
+                          onMouseEnter={(e) => {
+                            if (type !== option) {
+                              e.target.style.backgroundColor = '#f9fafb';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (type !== option) {
+                              e.target.style.backgroundColor = 'white';
+                            }
+                          }}
+                        >
+                          {option}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
+                  세전 월 수입 (원)
+                </label>
+                <input
+                  type="number"
+                  placeholder="3000000"
+                  value={monthlyIncome}
+                  onChange={(e) => setMonthlyIncome(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '12px',
+                    fontSize: '15px',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
+                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
+                  세금 (%)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  placeholder="3.3"
+                  value={taxRate}
+                  onChange={(e) => setTaxRate(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '12px',
+                    fontSize: '15px',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
+                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                />
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
+                  월 투입 시간
+                </label>
+                <input
+                  type="number"
+                  placeholder="160"
+                  value={monthlyHours}
+                  onChange={(e) => setMonthlyHours(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '12px',
+                    fontSize: '15px',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#60A5FA'}
+                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {editingId && (
+                  <button
+                    onClick={handleCancelEdit}
+                    style={{
+                      flex: 1,
+                      padding: '14px',
+                      backgroundColor: '#f3f4f6',
+                      color: '#374151',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    취소
+                  </button>
+                )}
+                <button
+                  onClick={handleAddIncome}
+                  style={{
+                    flex: 1,
+                    padding: '14px',
+                    backgroundColor: '#60A5FA',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {editingId ? '수정하기' : '추가하기'}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
-        {activeTab === 'graph' && (
+{activeTab === 'graph' && (
           <div style={{ padding: '20px' }}>
             {filteredIncomes.length > 0 ? (
               <>
